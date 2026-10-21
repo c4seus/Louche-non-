@@ -17,7 +17,7 @@ module.exports = function withReleaseSigning(config) {
       gradle = gradle.replace(/signingConfigs\s*\{/, (match) => `${match}${SIGNING_CONFIG}`);
       gradle = gradle.replace(
         /(buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?)signingConfig\s+signingConfigs\.debug/,
-        '$1signingConfig signingConfigs.release',
+        "$1signingConfig project.hasProperty('LOUCHE_UPLOAD_STORE_FILE') ? signingConfigs.release : signingConfigs.debug",
       );
     }
     cfg.modResults.contents = gradle;

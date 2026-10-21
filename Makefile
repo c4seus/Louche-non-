@@ -8,11 +8,12 @@ VERSION = $(shell node -p "require('./app.json').expo.version")
 VERSION_CODE = $(shell node -p "require('./app.json').expo.android.versionCode")
 RULES_VERSION = $(shell node -p "require('./rules/rules.json').version")
 RULES_UPDATED = $(shell node -p "require('./rules/rules.json').updated")
+GRADLE_PROPS := $(HOME)/.gradle/gradle.properties
 APK_SRC := android/app/build/outputs/apk/release/app-release.apk
 AAB_SRC := android/app/build/outputs/bundle/release/app-release.aab
 
 .PHONY: help install check fix doctor typecheck test test-watch corpus verify start start-clear \
-	usb dev devices logs prebuild apk aab install-apk uninstall version bump-patch bump-minor \
+	usb dev devices logs prebuild check-signing apk aab install-apk uninstall version bump-patch bump-minor \
 	bump-major bump-rules tag gradle-stop clean reset
 
 help:
@@ -39,7 +40,8 @@ help:
 	@echo ""
 	@echo "Build"
 	@echo "  make prebuild      Régénère le dossier android/"
-	@echo "  make apk           APK de release dans $(DIST)/ (bêta testeurs, GitHub Releases)"
+	@echo "  make check-signing Vérifie la clé de signature de release (avant aab)"
+	@echo "  make apk           APK autonome dans $(DIST)/ (bêta testeurs ; clé de debug si aucune clé de release)"
 	@echo "  make aab           AAB de release dans $(DIST)/ (Play Store)"
 	@echo "  make install-apk   Installe l'APK de release sur le téléphone"
 	@echo "  make uninstall     Désinstalle l'app du téléphone"
@@ -105,13 +107,27 @@ logs:
 prebuild:
 	npx expo prebuild --clean --platform android
 
+check-signing:
+	@grep -q '^LOUCHE_UPLOAD_STORE_FILE=' $(GRADLE_PROPS) 2>/dev/null || { \
+		echo "Clé de signature non configurée : LOUCHE_UPLOAD_STORE_FILE absent de $(GRADLE_PROPS)."; \
+		echo "Crée la keystore et déclare-la (GUIDE.md, sections 2.5.1 et 2.5.2)."; \
+		exit 1; }
+	@for key in LOUCHE_UPLOAD_KEY_ALIAS LOUCHE_UPLOAD_STORE_PASSWORD LOUCHE_UPLOAD_KEY_PASSWORD; do \
+		grep -q "^$$key=" $(GRADLE_PROPS) || { echo "$$key absent de $(GRADLE_PROPS)."; exit 1; }; \
+	done
+	@store=$$(grep '^LOUCHE_UPLOAD_STORE_FILE=' $(GRADLE_PROPS) | cut -d= -f2-); \
+		test -f "$$store" || { echo "Keystore introuvable : $$store"; exit 1; }
+	@echo "Signature OK"
+
 apk: verify prebuild
 	cd android && ./gradlew assembleRelease
 	mkdir -p $(DIST)
 	cp $(APK_SRC) $(DIST)/$(APP_NAME)-$(VERSION).apk
 	@echo "APK prêt : $(DIST)/$(APP_NAME)-$(VERSION).apk"
+	@grep -q '^LOUCHE_UPLOAD_STORE_FILE=' $(GRADLE_PROPS) 2>/dev/null || \
+		echo "Signé avec la clé de debug : parfait pour une bêta, mais il faudra le désinstaller avant la version du Play Store."
 
-aab: verify prebuild
+aab: check-signing verify prebuild
 	cd android && ./gradlew bundleRelease
 	mkdir -p $(DIST)
 	cp $(AAB_SRC) $(DIST)/$(APP_NAME)-$(VERSION)-$(VERSION_CODE).aab
