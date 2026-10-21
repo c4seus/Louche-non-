@@ -11,9 +11,13 @@ RULES_UPDATED = $(shell node -p "require('./rules/rules.json').updated")
 GRADLE_PROPS := $(HOME)/.gradle/gradle.properties
 APK_SRC := android/app/build/outputs/apk/release/app-release.apk
 AAB_SRC := android/app/build/outputs/bundle/release/app-release.aab
+APK = $(DIST)/$(APP_NAME)-$(VERSION).apk
+NOTES = $(DIST)/RELEASE-$(VERSION).md
+APKSIGNER = $(shell ls -d $(ANDROID_HOME)/build-tools/*/ 2>/dev/null | tail -1)apksigner
+PRERELEASE ?= 1
 
 .PHONY: help install check fix doctor typecheck test test-watch corpus verify start start-clear \
-	usb dev devices logs prebuild check-signing apk aab install-apk uninstall version bump-patch bump-minor \
+	usb dev devices logs prebuild check-signing apk aab release publish install-apk uninstall version bump-patch bump-minor \
 	bump-major bump-rules tag gradle-stop clean reset
 
 help:
@@ -44,6 +48,11 @@ help:
 	@echo "  make apk           APK autonome dans $(DIST)/ (bêta testeurs ; clé de debug si aucune clé de release)"
 	@echo "  make aab           AAB de release dans $(DIST)/ (Play Store)"
 	@echo "  make install-apk   Installe l'APK de release sur le téléphone"
+	@echo ""
+	@echo "Release GitHub"
+	@echo "  make release       APK signé avec ta clé + notes avec empreintes dans $(DIST)/"
+	@echo "  make publish       Tag, push et release GitHub avec l'APK (GitHub CLI)"
+	@echo "                     PRERELEASE=0 pour une version finale"
 	@echo "  make uninstall     Désinstalle l'app du téléphone"
 	@echo ""
 	@echo "Versions"
@@ -122,8 +131,8 @@ check-signing:
 apk: verify prebuild
 	cd android && ./gradlew assembleRelease
 	mkdir -p $(DIST)
-	cp $(APK_SRC) $(DIST)/$(APP_NAME)-$(VERSION).apk
-	@echo "APK prêt : $(DIST)/$(APP_NAME)-$(VERSION).apk"
+	cp $(APK_SRC) $(APK)
+	@echo "APK prêt : $(APK)"
 	@grep -q '^LOUCHE_UPLOAD_STORE_FILE=' $(GRADLE_PROPS) 2>/dev/null || \
 		echo "Signé avec la clé de debug : parfait pour une bêta, mais il faudra le désinstaller avant la version du Play Store."
 
@@ -133,8 +142,41 @@ aab: check-signing verify prebuild
 	cp $(AAB_SRC) $(DIST)/$(APP_NAME)-$(VERSION)-$(VERSION_CODE).aab
 	@echo "AAB prêt : $(DIST)/$(APP_NAME)-$(VERSION)-$(VERSION_CODE).aab"
 
+release: check-signing apk
+	@test -x "$(APKSIGNER)" || { echo "apksigner introuvable dans $(ANDROID_HOME)/build-tools."; exit 1; }
+	@certs=$$("$(APKSIGNER)" verify --print-certs $(APK)) || exit 1; \
+	dn=$$(printf '%s\n' "$$certs" | sed -n 's/.*certificate DN: //p' | head -1); \
+	cert=$$(printf '%s\n' "$$certs" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1); \
+	case "$$dn" in *"Android Debug"*) echo "APK signé avec la clé de debug : release refusée."; exit 1;; esac; \
+	sum=$$(sha256sum $(APK) | cut -d' ' -f1); \
+	{ \
+		echo "Nouveautés :"; \
+		echo ""; \
+		echo "- …"; \
+		echo ""; \
+		echo "**Installation** : télécharge le fichier \`.apk\` sur ton téléphone Android, ouvre-le et autorise l'installation."; \
+		echo ""; \
+		echo "**Vérification**"; \
+		echo "- SHA-256 du fichier : \`$$sum\`"; \
+		echo "- Empreinte SHA-256 du certificat de signature : \`$$cert\`"; \
+	} > $(NOTES); \
+	echo ""; \
+	echo "Signé par : $$dn"; \
+	echo "SHA-256 du fichier : $$sum"; \
+	echo "Certificat : $$cert"; \
+	echo ""; \
+	echo "Notes prêtes : $(NOTES). Complète les nouveautés, puis lance make publish."
+
+publish:
+	@command -v gh >/dev/null || { echo "GitHub CLI absent : sudo apt install gh, puis gh auth login."; exit 1; }
+	@test -f $(APK) && test -f $(NOTES) || { echo "Lance d'abord make release."; exit 1; }
+	@! grep -qx -- '- …' $(NOTES) || { echo "Complète les nouveautés dans $(NOTES) avant de publier."; exit 1; }
+	@git rev-parse -q --verify refs/tags/v$(VERSION) >/dev/null || $(MAKE) --no-print-directory tag
+	git push origin v$(VERSION)
+	gh release create v$(VERSION) $(APK) --title "Louche, non ? $(VERSION)$(if $(filter 1,$(PRERELEASE)), (bêta),)" --notes-file $(NOTES) $(if $(filter 1,$(PRERELEASE)),--prerelease,)
+
 install-apk:
-	adb install -r $(DIST)/$(APP_NAME)-$(VERSION).apk
+	adb install -r $(APK)
 
 uninstall:
 	adb uninstall $(PACKAGE)
