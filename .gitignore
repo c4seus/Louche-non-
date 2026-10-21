@@ -39,3 +39,22 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Signing keys
+*.keystore
+
+# Personal files
+GUIDE.md
+store/
+
+# Builds copied outside dist/
+*.apk
+*.aab
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Test coverage
+coverage/

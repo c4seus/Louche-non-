@@ -1,0 +1,31 @@
+name: Fausse alerte
+description: Un message légitime que l'application a signalé comme suspect ou comme arnaque
+labels: ["false-alarm"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci ! **Retirez vos données personnelles** du message (codes, numéros, nom) avant de l'envoyer.
+  - type: textarea
+    id: message
+    attributes:
+      label: Texte du message (anonymisé)
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: sender
+    attributes:
+      label: Expéditeur réel
+      placeholder: La Poste, ma banque, ma mutuelle…
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Verdict affiché par l'application
+      options:
+        - Message suspect
+        - Arnaque probable
+    validations:
+      required: true

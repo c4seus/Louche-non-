@@ -1,0 +1,39 @@
+name: Arnaque non détectée
+description: Un message frauduleux que l'application n'a pas repéré (ou a jugé trop gentiment)
+labels: ["missed-scam"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci ! Avant d'envoyer, **retirez toutes vos données personnelles** du message : nom, numéro de téléphone, numéro de suivi, adresse. Gardez les liens, ce sont eux que l'application analyse.
+  - type: textarea
+    id: message
+    attributes:
+      label: Texte du message (anonymisé)
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Reçu par
+      options:
+        - SMS
+        - E-mail
+        - WhatsApp ou autre messagerie
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Verdict affiché par l'application
+      options:
+        - Aucun signal suspect détecté
+        - Message suspect
+    validations:
+      required: true
+  - type: input
+    id: received
+    attributes:
+      label: Date de réception (environ)
+      placeholder: octobre 2026
