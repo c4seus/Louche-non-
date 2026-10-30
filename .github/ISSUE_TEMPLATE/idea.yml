@@ -1,0 +1,32 @@
+name: Idée d'amélioration
+description: Une fonctionnalité qui vous manque ou une idée pour rendre l'application plus utile
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de proposer une idée !
+        Avant d'envoyer, jetez un œil aux [idées déjà proposées](https://github.com/c4seus/Louche-non-/issues?q=label%3Aenhancement) : vous pouvez aussi ajouter un 👍 ou un commentaire sur une idée existante.
+
+        À savoir : l'application ne lit jamais vos SMS d'elle-même et n'envoie jamais vos messages à un serveur. Les idées qui reviennent sur ces principes ne seront pas retenues.
+  - type: textarea
+    id: need
+    attributes:
+      label: Quel est le besoin ?
+      description: Ce qui vous gêne ou vous manque aujourd'hui, avec un exemple concret si possible.
+      placeholder: Quand je reçois un SMS douteux, je dois le copier puis ouvrir l'application, c'est long…
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Votre idée
+      description: Comment l'application pourrait vous aider. Facultatif, le besoin suffit.
+  - type: dropdown
+    id: for
+    attributes:
+      label: Pour qui ?
+      options:
+        - Pour moi
+        - Pour un proche moins à l'aise avec le téléphone
+        - Pour tout le monde
