@@ -31,6 +31,18 @@ Hors périmètre : l'envoi des messages ou des liens à un serveur pour vérific
 
 ## Fonctionnement de l'analyse
 
+La détection repose sur deux sources complémentaires, combinées sur le téléphone :
+
+1. **Les règles du projet** ([`rules/rules.json`](rules/rules.json)) : marques imitées, domaines officiels, scénarios d'arnaque français, expressions de pression ou de demande d'argent. Elles reconnaissent une arnaque à sa forme, même si elle est toute nouvelle. Elles sont intégrées à l'application et mises à jour en ligne.
+2. **Une liste externe de sites d'arnaque déjà signalés** (`domains.json`), construite chaque jour à partir de bases publiques de phishing. Elle repère des sites qu'aucune règle ne permettrait de deviner, mais seulement une fois qu'ils ont été signalés.
+
+| Source | Origine | Licence | Mise à jour |
+| --- | --- | --- | --- |
+| Règles | Ce dépôt, contributions de la communauté | GPL-3.0-or-later | À chaque modification de `rules/rules.json` |
+| [phishing-filter](https://gitlab.com/malware-filter/phishing-filter) | Agrégation de [OpenPhish](https://openphish.com/), [IPThreat](https://ipthreat.net/) et [PhishTank](https://phishtank.org/), sans les sites les plus visités du web | CC BY-SA 4.0 | Deux fois par jour |
+
+Sans connexion, ou si les mises à jour sont désactivées, l'application utilise les règles intégrées et la dernière liste téléchargée.
+
 `analyze(texte)` dans `src/engine` renvoie un verdict, un score de 0 à 100, la liste des signaux trouvés et les liens extraits.
 
 | Score | Verdict |
@@ -39,7 +51,7 @@ Hors périmètre : l'envoi des messages ou des liens à un serveur pour vérific
 | de 30 à 59 | `suspicious` (Message suspect) |
 | moins de 30 | `clean` (Aucun signal suspect détecté) |
 
-Chaque signal ajoute des points (voir `POINTS` dans `src/engine/analyze.ts`). Quand tous les liens mènent vers des domaines officiels connus, le score baisse un peu, sauf si un signal fort a été trouvé.
+Chaque signal ajoute des points (voir `POINTS` dans `src/engine/analyze.ts`). Un lien présent dans la liste externe vaut à lui seul le verdict « Arnaque probable ». Quand tous les liens mènent vers des domaines officiels connus, le score baisse un peu, sauf si un signal fort a été trouvé.
 
 Toutes les connaissances sont dans [`rules/rules.json`](rules/rules.json) :
 
@@ -47,6 +59,7 @@ Toutes les connaissances sont dans [`rules/rules.json`](rules/rules.json) :
 | --- | --- |
 | `brands` | Organismes imités par les escrocs : libellé affiché, noms cherchés dans le texte, morceaux cherchés dans les domaines, domaines officiels |
 | `trustedDomains` | Autres domaines officiels, jamais signalés |
+| `feedExclusions` | Domaines à ne jamais signaler à cause de la liste de sites frauduleux, pour corriger une fausse alerte (facultatif) |
 | `multiLevelSuffixes` | Suffixes comme `gouv.fr`, pour retrouver le domaine principal |
 | `shorteners`, `suspiciousTlds`, `commonTlds` | Vérification des liens ; un domaine écrit sans `http` ni `www` n'est détecté que si sa terminaison figure dans ces listes |
 | `scenarios` | Scénarios d'arnaque : au moins une ancre, plus assez de mots-clés (`minMatches`) |
@@ -66,11 +79,11 @@ Une GitHub Action ([`.github/workflows/feed.yml`](.github/workflows/feed.yml)) t
 | `domains.json` | Sites d'arnaque signalés au cours des 45 derniers jours, sans les domaines officiels des organismes connus |
 | `*.sig` | Signatures Ed25519 de chaque fichier |
 
-L'application télécharge ces fichiers au plus une fois par jour, vérifie leur signature avec la clé publique de `src/config.ts`, puis les garde pour fonctionner hors ligne. Des règles plus anciennes que celles intégrées à l'application ou un fichier mal signé sont ignorés. Un site de la liste suffit à donner le verdict « Arnaque probable ».
+L'application télécharge ces fichiers au plus une fois par jour, vérifie leur signature avec la clé publique de `src/config.ts`, puis les garde pour fonctionner hors ligne. Des règles plus anciennes que celles intégrées à l'application ou un fichier mal signé sont ignorés. Un site de la liste suffit à donner le verdict « Arnaque probable », sauf s'il figure dans `feedExclusions` de `rules.json` : l'Action le retire alors de la liste, et l'application l'ignore aussi.
 
-Source des sites signalés : [phishing-filter](https://gitlab.com/malware-filter/phishing-filter) (OpenPhish, IPThreat, PhishTank), licence CC BY-SA 4.0. `domains.json` est distribué sous la même licence.
+`domains.json` est dérivé de phishing-filter et distribué sous la même licence, CC BY-SA 4.0.
 
-La construction se teste en local avec une liste quelconque :
+La construction se teste en local avec une liste quelconque, en enregistrant dans `cle-privee.pem` la clé privée affichée par `make feed-key` (fichier à ne jamais committer) :
 
 ```bash
 make feed-key

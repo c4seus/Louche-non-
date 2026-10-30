@@ -55,6 +55,7 @@ function exclusionsFromRules(rules, extra = []) {
     ...rules.brands.flatMap((brand) => brand.domains),
     ...rules.trustedDomains,
     ...rules.shorteners,
+    ...(Array.isArray(rules.feedExclusions) ? rules.feedExclusions : []),
     ...extra,
   ].map((domain) => domain.toLowerCase());
 }
