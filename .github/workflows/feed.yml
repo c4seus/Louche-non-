@@ -1,0 +1,53 @@
+name: Feed
+
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - rules/rules.json
+      - scripts/build-feed.mjs
+      - scripts/feed-lib.js
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: feed
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Load previous feed
+        run: |
+          mkdir -p feed-out
+          if git ls-remote --exit-code --heads origin feed >/dev/null; then
+            git fetch --depth 1 origin feed
+            git archive FETCH_HEAD | tar -x -C feed-out
+          fi
+
+      - name: Build and sign
+        env:
+          FEED_SIGNING_KEY: ${{ secrets.FEED_SIGNING_KEY }}
+        run: node scripts/build-feed.mjs feed-out
+
+      - name: Publish to the feed branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd feed-out
+          git init -q -b feed
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Feed $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" feed

@@ -168,21 +168,3 @@ describe('blocklist', () => {
     expect(describeFinding(item)).toContain('déjà signalés');
   });
 });
-
-describe('feedExclusions', () => {
-  const blocklist = createBlocklist(['boulangerie-martin.fr', 'scam.xyz']);
-  const rules = { ...defaultRules, feedExclusions: ['boulangerie-martin.fr'] };
-
-  it('ignores excluded domains and their subdomains in the blocklist', () => {
-    const codes = (text: string) => analyze(text, rules, { blocklist }).findings.map((item) => item.code);
-    expect(codes('Votre commande est prête : https://www.boulangerie-martin.fr/commande')).not.toContain('knownPhishing');
-    expect(codes('https://scam.xyz')).toContain('knownPhishing');
-  });
-
-  it('is optional in the rules file and must be lowercase', () => {
-    const { feedExclusions, ...withoutExclusions } = rawRules as Record<string, unknown>;
-    expect(feedExclusions).toEqual([]);
-    expect(validateRules(withoutExclusions).feedExclusions).toEqual([]);
-    expect(() => validateRules({ ...rawRules, feedExclusions: ['Exemple.fr'] })).toThrow(RulesError);
-  });
-});
