@@ -23,11 +23,12 @@ Disponibles :
 
 À venir :
 
-- Recevoir un message via le menu « Partager » d'Android.
-- Fiches pédagogiques sur les arnaques du moment.
-- Mode « proche » : envoyer un verdict à un membre de sa famille en un geste.
+- **v1.1** : recevoir un message via le menu « Partager » d'Android, analyser le texte copié en un geste, tutoriel au premier lancement.
+- **v1.2** : signaler une fausse alerte depuis l'application, sites frauduleux ciblant la France, fiches sur les arnaques du moment.
 
-Hors périmètre : l'envoi des messages ou des liens à un serveur pour vérification, le scan de QR codes.
+Le détail et l'avancement sont dans les [jalons](https://github.com/c4seus/Louche-non-/milestones). Une idée ? Proposez-la avec le formulaire [« Idée d'amélioration »](https://github.com/c4seus/Louche-non-/issues/new?template=idea.yml).
+
+Hors périmètre : l'envoi des messages ou des liens à un serveur pour vérification, la lecture automatique des SMS reçus, le scan de QR codes.
 
 ## Fonctionnement de l'analyse
 

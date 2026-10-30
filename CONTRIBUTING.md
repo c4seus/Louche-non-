@@ -14,6 +14,13 @@ Vous ne savez pas coder ? Ouvrez simplement une issue avec le formulaire « Arna
 
 Les messages légitimes sont aussi précieux que les arnaques : ils évitent les fausses alertes. Ajoutez de vraies notifications de La Poste, de banques ou d'administrations quand vous le pouvez.
 
+## Proposer une idée ou prendre une tâche
+
+- Une idée d'évolution : ouvrez une issue avec le formulaire « Idée d'amélioration ».
+- Les évolutions prévues sont rangées par [jalon](https://github.com/c4seus/Louche-non-/milestones) (`v1.1`, `v1.2`, `Plus tard`).
+- Pour une première contribution, regardez les issues marquées [`good first issue`](https://github.com/c4seus/Louche-non-/issues?q=is%3Aopen+label%3A%22good+first+issue%22).
+- Avant de commencer, laissez un commentaire sur l'issue pour éviter que deux personnes travaillent sur la même chose.
+
 ## Conventions du fichier de règles
 
 - Les domaines, les morceaux de nom et les terminaisons s'écrivent en minuscules.
