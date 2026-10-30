@@ -47,6 +47,7 @@ Toutes les connaissances sont dans [`rules/rules.json`](rules/rules.json) :
 | --- | --- |
 | `brands` | Organismes imités par les escrocs : libellé affiché, noms cherchés dans le texte, morceaux cherchés dans les domaines, domaines officiels |
 | `trustedDomains` | Autres domaines officiels, jamais signalés |
+| `feedExclusions` | Domaines à ne jamais signaler à cause de la liste de sites frauduleux, pour corriger une fausse alerte (facultatif) |
 | `multiLevelSuffixes` | Suffixes comme `gouv.fr`, pour retrouver le domaine principal |
 | `shorteners`, `suspiciousTlds`, `commonTlds` | Vérification des liens ; un domaine écrit sans `http` ni `www` n'est détecté que si sa terminaison figure dans ces listes |
 | `scenarios` | Scénarios d'arnaque : au moins une ancre, plus assez de mots-clés (`minMatches`) |
@@ -66,7 +67,7 @@ Une GitHub Action ([`.github/workflows/feed.yml`](.github/workflows/feed.yml)) t
 | `domains.json` | Sites d'arnaque signalés au cours des 45 derniers jours, sans les domaines officiels des organismes connus |
 | `*.sig` | Signatures Ed25519 de chaque fichier |
 
-L'application télécharge ces fichiers au plus une fois par jour, vérifie leur signature avec la clé publique de `src/config.ts`, puis les garde pour fonctionner hors ligne. Des règles plus anciennes que celles intégrées à l'application ou un fichier mal signé sont ignorés. Un site de la liste suffit à donner le verdict « Arnaque probable ».
+L'application télécharge ces fichiers au plus une fois par jour, vérifie leur signature avec la clé publique de `src/config.ts`, puis les garde pour fonctionner hors ligne. Des règles plus anciennes que celles intégrées à l'application ou un fichier mal signé sont ignorés. Un site de la liste suffit à donner le verdict « Arnaque probable », sauf s'il figure dans `feedExclusions` de `rules.json` : l'Action le retire alors de la liste, et l'application l'ignore aussi.
 
 Source des sites signalés : [phishing-filter](https://gitlab.com/malware-filter/phishing-filter) (OpenPhish, IPThreat, PhishTank), licence CC BY-SA 4.0. `domains.json` est distribué sous la même licence.
 

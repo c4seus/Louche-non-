@@ -105,6 +105,7 @@ export function validateRules(input: unknown): Rules {
     updated: asString(record.updated, 'updated'),
     brands,
     trustedDomains: asLowerList(record.trustedDomains, 'trustedDomains'),
+    feedExclusions: record.feedExclusions === undefined ? [] : asLowerList(record.feedExclusions, 'feedExclusions'),
     multiLevelSuffixes: asLowerList(record.multiLevelSuffixes, 'multiLevelSuffixes'),
     shorteners: asLowerList(record.shorteners, 'shorteners'),
     suspiciousTlds: asLowerList(record.suspiciousTlds, 'suspiciousTlds'),

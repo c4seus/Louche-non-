@@ -133,7 +133,8 @@ function brandFindingFor(link: Link, brands: Brand[], rules: Rules): Finding | n
 function linkFindings(link: Link, rules: Rules, officialDomains: string[], blocklist: Blocklist): Finding[] {
   const base = { host: link.host, registrableDomain: link.registrableDomain };
   const official = !link.isIp && officialDomains.some((domain) => hostMatches(link.host, domain));
-  const known = !official && blocklist.has(link.host) ? [finding('knownPhishing', base)] : [];
+  const excluded = rules.feedExclusions.some((domain) => hostMatches(link.host, domain));
+  const known = !official && !excluded && blocklist.has(link.host) ? [finding('knownPhishing', base)] : [];
   if (link.isIp) {
     return [...known, finding('ipAddress', base)];
   }

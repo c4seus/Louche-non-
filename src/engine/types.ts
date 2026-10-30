@@ -73,6 +73,7 @@ export interface Rules {
   updated: string;
   brands: Brand[];
   trustedDomains: string[];
+  feedExclusions: string[];
   multiLevelSuffixes: string[];
   shorteners: string[];
   suspiciousTlds: string[];

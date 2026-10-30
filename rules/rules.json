@@ -35,6 +35,7 @@
     { "id": "edf", "label": "EDF", "names": ["edf"], "tokens": ["edf"], "domains": ["edf.fr"] },
     { "id": "engie", "label": "Engie", "names": ["engie"], "tokens": ["engie"], "domains": ["engie.fr"] }
   ],
+  "feedExclusions": [],
   "trustedDomains": ["service-public.fr", "service-public.gouv.fr", "cybermalveillance.gouv.fr", "33700.fr"],
   "multiLevelSuffixes": ["gouv.fr", "asso.fr", "com.fr", "nom.fr", "presse.fr", "co.uk", "org.uk", "com.br"],
   "shorteners": ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "cutt.ly", "rb.gy", "shorturl.at", "tiny.cc", "bit.do", "s.id", "t.ly", "lnkd.in", "v.gd", "urlz.fr"],

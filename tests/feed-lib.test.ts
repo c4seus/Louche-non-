@@ -73,6 +73,8 @@ describe('buildFeed', () => {
     expect(list).toContain('github.io');
     expect(lib.isExcluded('sub.ameli.fr', list)).toBe(true);
     expect(lib.isExcluded('ameli-fr.xyz', list)).toBe(false);
+    const custom = lib.exclusionsFromRules({ ...rules, feedExclusions: ['boulangerie-martin.fr'] });
+    expect(lib.isExcluded('www.boulangerie-martin.fr', custom)).toBe(true);
   });
 });
 

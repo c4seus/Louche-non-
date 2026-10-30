@@ -19,6 +19,7 @@ Les messages légitimes sont aussi précieux que les arnaques : ils évitent les
 - Les domaines, les morceaux de nom et les terminaisons s'écrivent en minuscules.
 - Les expressions peuvent contenir des accents et de la ponctuation : elles sont normalisées avant la recherche.
 - Gardez des morceaux de nom précis. Les morceaux de moins de 6 lettres ne correspondent qu'à une partie entière d'un domaine.
+- Une fausse alerte due à la liste de sites frauduleux (« figure dans une liste de sites d'arnaque déjà signalés ») se corrige en ajoutant le domaine à `feedExclusions`. Vérifiez d'abord que le site n'héberge plus de page d'arnaque.
 - Un domaine officiel doit l'être vraiment : vérifiez-le depuis le site de l'organisme. Un domaine pirate ajouté par erreur neutraliserait la détection.
 - Préférez ajouter des mots-clés à un scénario existant plutôt que d'en créer un nouveau.
 - Incrémentez `version` et mettez à jour `updated` en haut du fichier (`make bump-rules`).
