@@ -2,7 +2,7 @@
 
 Une application Android qui aide à repérer les SMS et e-mails frauduleux. Collez un message douteux : l'application explique en français simple ce qui cloche et quoi faire ensuite.
 
-- **100 % sur le téléphone** : aucune requête réseau, aucun compte, aucune publicité, aucun traceur.
+- **Analyse 100 % sur le téléphone** : les messages ne sont jamais envoyés. Aucun compte, aucune publicité, aucun traceur.
 - **Aucune permission SMS** : on colle le message soi-même (le partage depuis d'autres applications arrive bientôt).
 - **Un avis, pas une garantie** : l'application ne dit jamais qu'un message est « sûr », seulement qu'aucun signal suspect n'a été trouvé.
 
@@ -18,6 +18,7 @@ Disponibles :
 - Verdict en trois niveaux, avec une explication pour chaque signal et le rappel de vérifier via l'application ou le site officiel.
 - Actions : signaler au 33700 (avec l'aide pour le second SMS), ouvrir cybermalveillance.gouv.fr, savoir comment bloquer l'expéditeur.
 - Règles dans un fichier JSON séparé, que la communauté peut enrichir par pull request.
+- Mises à jour quotidiennes de la détection : les règles et une liste de sites d'arnaque déjà signalés sont téléchargées depuis GitHub, signées et vérifiées avant usage. Rien n'est envoyé ; désactivable dans « À propos ».
 - Lien « Signaler une arnaque non détectée » qui ouvre le formulaire GitHub avec le message prérempli, et écran « À propos » (licence, code source, comment contribuer).
 
 À venir :
@@ -26,7 +27,7 @@ Disponibles :
 - Fiches pédagogiques sur les arnaques du moment.
 - Mode « proche » : envoyer un verdict à un membre de sa famille en un geste.
 
-Hors périmètre : toute vérification en ligne, le scan de QR codes.
+Hors périmètre : l'envoi des messages ou des liens à un serveur pour vérification, le scan de QR codes.
 
 ## Fonctionnement de l'analyse
 
@@ -55,6 +56,27 @@ Les expressions sont cherchées en mots entiers, sans tenir compte des majuscule
 
 Le fichier de règles est validé au démarrage (`src/engine/rules.ts`) et par les tests.
 
+## Mises à jour de la détection (feed)
+
+Une GitHub Action ([`.github/workflows/feed.yml`](.github/workflows/feed.yml)) tourne toutes les six heures et publie sur la branche `feed` :
+
+| Fichier | Contenu |
+| --- | --- |
+| `rules.json` | Copie de `rules/rules.json` de la branche `main` |
+| `domains.json` | Sites d'arnaque signalés au cours des 45 derniers jours, sans les domaines officiels des organismes connus |
+| `*.sig` | Signatures Ed25519 de chaque fichier |
+
+L'application télécharge ces fichiers au plus une fois par jour, vérifie leur signature avec la clé publique de `src/config.ts`, puis les garde pour fonctionner hors ligne. Des règles plus anciennes que celles intégrées à l'application ou un fichier mal signé sont ignorés. Un site de la liste suffit à donner le verdict « Arnaque probable ».
+
+Source des sites signalés : [phishing-filter](https://gitlab.com/malware-filter/phishing-filter) (OpenPhish, IPThreat, PhishTank), licence CC BY-SA 4.0. `domains.json` est distribué sous la même licence.
+
+La construction se teste en local avec une liste quelconque :
+
+```bash
+make feed-key
+FEED_SIGNING_KEY="$(cat cle-privee.pem)" FEED_SOURCE_URLS=https://exemple/liste.txt node scripts/build-feed.mjs feed-out
+```
+
 ## Structure du projet
 
 ```
@@ -62,7 +84,9 @@ App.tsx                    Écran principal
 rules/rules.json           Règles de détection (données uniquement)
 src/engine/                Moteur d'analyse, sans dépendance à React Native
 src/i18n/fr.ts             Tous les textes affichés
-src/config.ts              Adresses du dépôt et de la politique de confidentialité
+src/config.ts              Adresses du dépôt, de la politique de confidentialité et du feed, clé publique
+src/feed/                  Téléchargement, vérification et cache des mises à jour
+scripts/                   Construction et signature du feed (GitHub Action)
 src/ui/                    Carte de résultat, écran « À propos », actions, couleurs
 tests/                     Tests unitaires et corpus de messages
 tests/corpus/samples.json  Messages réalistes avec le verdict attendu

@@ -1,18 +1,31 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import appConfig from '../../app.json';
 import { CONTRIBUTING_URL, ISSUES_URL, LICENSE_URL, PRIVACY_URL, REPO_URL } from '../config';
-import { defaultRules } from '../engine/rules';
+import type { FeedController } from '../feed/useFeed';
 import { ui } from '../i18n/fr';
 import { openUrl } from './actions';
+import { formatDate } from './formatDate';
 import type { Palette } from './theme';
 
 interface Props {
   palette: Palette;
+  feed: FeedController;
   onBack: () => void;
 }
 
-export function AboutScreen({ palette, onBack }: Props) {
+export function AboutScreen({ palette, feed, onBack }: Props) {
+  const { data, activity, configured } = feed;
+  const status =
+    activity === 'updating'
+      ? ui.updatesRunning
+      : activity === 'updated'
+        ? ui.updatesDone
+        : activity === 'failed'
+          ? ui.updatesFailed
+          : !configured
+            ? ui.updatesNotConfigured
+            : null;
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Pressable
@@ -28,12 +41,51 @@ export function AboutScreen({ palette, onBack }: Props) {
           {ui.appName}
         </Text>
         <Text style={[styles.muted, { color: palette.muted }]}>
-          {ui.aboutVersion(appConfig.expo.version, defaultRules.version, defaultRules.updated)}
+          {ui.aboutVersion(appConfig.expo.version, data.rules.version, formatDate(data.rules.updated))}
         </Text>
       </View>
 
       <Section title={ui.aboutHowTitle} palette={palette}>
         <Text style={[styles.body, { color: palette.text }]}>{ui.aboutHowBody}</Text>
+      </Section>
+
+      <Section title={ui.updatesTitle} palette={palette}>
+        <Text style={[styles.body, { color: palette.text }]}>{ui.updatesBody}</Text>
+        <Text style={[styles.info, { color: palette.muted }]}>
+          {ui.updatesRules(data.rules.version, formatDate(data.rules.updated), data.rulesSource === 'remote')}
+        </Text>
+        <Text style={[styles.info, { color: palette.muted }]}>
+          {ui.updatesList(data.blocklistCount, data.blocklistGenerated === null ? null : formatDate(data.blocklistGenerated))}
+        </Text>
+        {configured && (
+          <>
+            <View style={styles.switchRow}>
+              <Text style={[styles.body, styles.flex, { color: palette.text }]}>{ui.updatesAuto}</Text>
+              <Switch
+                value={data.settings.autoUpdate}
+                onValueChange={(value) => feed.setAutoUpdate(value)}
+                trackColor={{ true: palette.primary, false: palette.border }}
+                accessibilityLabel={ui.updatesAuto}
+              />
+            </View>
+            <Pressable
+              onPress={() => feed.refresh()}
+              disabled={activity === 'updating'}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.button,
+                { borderColor: palette.primary, opacity: pressed || activity === 'updating' ? 0.6 : 1 },
+              ]}
+            >
+              {activity === 'updating' ? (
+                <ActivityIndicator color={palette.primary} />
+              ) : (
+                <Text style={[styles.buttonText, { color: palette.primary }]}>{ui.updatesNow}</Text>
+              )}
+            </Pressable>
+          </>
+        )}
+        {status !== null && <Text style={[styles.info, { color: palette.muted }]}>{status}</Text>}
       </Section>
 
       <Section title={ui.aboutContributeTitle} palette={palette}>
@@ -107,4 +159,7 @@ const styles = StyleSheet.create({
   button: { borderWidth: 2, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center' },
   buttonText: { fontSize: 17, fontWeight: '600', textAlign: 'center' },
   footer: { fontSize: 14, textAlign: 'center', marginTop: 8 },
+  info: { fontSize: 15, lineHeight: 21 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  flex: { flex: 1 },
 });

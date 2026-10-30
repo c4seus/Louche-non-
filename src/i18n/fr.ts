@@ -1,6 +1,10 @@
 import { defaultRules } from '../engine/rules';
 import type { Finding, Rules, Verdict } from '../engine/types';
 
+export function formatCount(value: number): string {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+}
+
 export interface VerdictText {
   icon: string;
   title: string;
@@ -82,6 +86,21 @@ export const ui = {
   aboutLicense: 'Lire la licence',
   aboutPrivacy: 'Politique de confidentialité',
   aboutAuthor: 'Créé par c4seus.',
+  updatesTitle: 'Mises à jour de la détection',
+  updatesBody:
+    'Une fois par jour, l’application télécharge depuis GitHub les règles à jour et une liste publique de sites d’arnaque déjà signalés. C’est un simple téléchargement : vos messages ne sont jamais envoyés. Sans connexion, la dernière version téléchargée reste utilisée.',
+  updatesRules: (version: number, updated: string, remote: boolean) =>
+    `Règles n° ${version} du ${updated}${remote ? ' (téléchargées)' : ' (intégrées à l’application)'}`,
+  updatesList: (count: number, date: string | null) =>
+    date === null
+      ? 'Liste de sites frauduleux : pas encore téléchargée'
+      : `Liste de sites frauduleux : ${formatCount(count)} sites, mise à jour le ${date}`,
+  updatesAuto: 'Mises à jour automatiques',
+  updatesNow: 'Mettre à jour maintenant',
+  updatesRunning: 'Mise à jour en cours…',
+  updatesDone: 'Détection à jour.',
+  updatesFailed: 'Mise à jour impossible pour le moment. La dernière version reste utilisée.',
+  updatesNotConfigured: 'Les mises à jour en ligne ne sont pas activées dans cette version.',
 };
 
 function brandLabel(rules: Rules, brandId?: string): string {
@@ -96,6 +115,8 @@ export function describeFinding(item: Finding, rules: Rules = defaultRules): str
   const host = item.host ?? '';
   const brand = brandLabel(rules, item.brandId);
   switch (item.code) {
+    case 'knownPhishing':
+      return `L'adresse ${host} figure dans une liste de sites d'arnaque déjà signalés.`;
     case 'brandImpersonation':
       return `L'adresse ${host} reprend le nom de ${brand}, mais ce n'est pas un de ses sites officiels.`;
     case 'brandInSubdomain':

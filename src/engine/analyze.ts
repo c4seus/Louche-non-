@@ -2,13 +2,15 @@ import { levenshtein } from './distance';
 import { extractLinks, stripLinks } from './links';
 import { defaultRules } from './rules';
 import { containsPhrase, countPhrases, hasAmount, normalizeText } from './text';
-import type { AnalysisResult, Brand, Finding, FindingCode, Link, Rules, Severity, Verdict } from './types';
+import { emptyBlocklist } from './blocklist';
+import type { AnalysisResult, Blocklist, Brand, Finding, FindingCode, Link, Rules, Severity, Verdict } from './types';
 
 export const SCAM_THRESHOLD = 60;
 export const SUSPICIOUS_THRESHOLD = 30;
 const MAX_SCENARIOS = 2;
 
 const POINTS: Record<Exclude<FindingCode, 'scenario'>, number> = {
+  knownPhishing: 70,
   brandImpersonation: 50,
   brandInSubdomain: 50,
   typosquat: 50,
@@ -128,17 +130,19 @@ function brandFindingFor(link: Link, brands: Brand[], rules: Rules): Finding | n
   return null;
 }
 
-function linkFindings(link: Link, rules: Rules, officialDomains: string[]): Finding[] {
+function linkFindings(link: Link, rules: Rules, officialDomains: string[], blocklist: Blocklist): Finding[] {
   const base = { host: link.host, registrableDomain: link.registrableDomain };
+  const official = !link.isIp && officialDomains.some((domain) => hostMatches(link.host, domain));
+  const known = !official && blocklist.has(link.host) ? [finding('knownPhishing', base)] : [];
   if (link.isIp) {
-    return [finding('ipAddress', base)];
+    return [...known, finding('ipAddress', base)];
   }
-  const results: Finding[] = [];
+  const results: Finding[] = [...known];
   if (rules.shorteners.some((domain) => hostMatches(link.host, domain))) {
     results.push(finding('shortener', base));
     return results;
   }
-  if (officialDomains.some((domain) => hostMatches(link.host, domain))) {
+  if (official) {
     return results;
   }
   if (link.host.split('.').some((label) => label.startsWith('xn--'))) {
@@ -160,7 +164,12 @@ function isOfficialFor(link: Link, brand: Brand): boolean {
   return brand.domains.some((domain) => hostMatches(link.host, domain));
 }
 
-export function analyze(input: string, rules: Rules = defaultRules): AnalysisResult {
+export interface AnalyzeOptions {
+  blocklist?: Blocklist;
+}
+
+export function analyze(input: string, rules: Rules = defaultRules, options: AnalyzeOptions = {}): AnalysisResult {
+  const blocklist = options.blocklist ?? emptyBlocklist;
   const links = extractLinks(input, rules);
   const text = normalizeText(stripLinks(input, links));
   const officialDomains = [...rules.brands.flatMap((brand) => brand.domains), ...rules.trustedDomains];
@@ -174,7 +183,7 @@ export function analyze(input: string, rules: Rules = defaultRules): AnalysisRes
       continue;
     }
     seenHosts.add(link.host);
-    findings.push(...linkFindings(link, rules, officialDomains));
+    findings.push(...linkFindings(link, rules, officialDomains, blocklist));
   }
 
   const flaggedBrands = new Set(

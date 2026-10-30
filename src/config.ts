@@ -5,3 +5,6 @@ export const CONTRIBUTING_URL = `${REPO_URL}/blob/main/CONTRIBUTING.md`;
 export const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
 export const PRIVACY_URL = 'https://c4seus.github.io/Louche-non-/privacy.html';
 export const MAX_PREFILL_LENGTH = 1500;
+export const FEED_BASE_URL = 'https://raw.githubusercontent.com/c4seus/Louche-non-/feed';
+export const FEED_PUBLIC_KEY = '';
+export const FEED_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;

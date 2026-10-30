@@ -15,6 +15,7 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { analyze } from './src/engine';
 import type { AnalysisResult } from './src/engine';
+import { useFeed, type FeedController } from './src/feed/useFeed';
 import { ui } from './src/i18n/fr';
 import { AboutScreen } from './src/ui/AboutScreen';
 import { ResultCard } from './src/ui/ResultCard';
@@ -31,6 +32,7 @@ export default function App() {
 
 function Root() {
   const palette = usePalette();
+  const feed = useFeed();
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
@@ -48,14 +50,22 @@ function Root() {
     <SafeAreaView style={[styles.screen, { backgroundColor: palette.background }]}>
       <StatusBar style="auto" />
       <View style={[styles.screen, showAbout && styles.hidden]}>
-        <HomeScreen palette={palette} onOpenAbout={() => setShowAbout(true)} />
+        <HomeScreen palette={palette} feed={feed} onOpenAbout={() => setShowAbout(true)} />
       </View>
-      {showAbout && <AboutScreen palette={palette} onBack={() => setShowAbout(false)} />}
+      {showAbout && <AboutScreen palette={palette} feed={feed} onBack={() => setShowAbout(false)} />}
     </SafeAreaView>
   );
 }
 
-function HomeScreen({ palette, onOpenAbout }: { palette: Palette; onOpenAbout: () => void }) {
+function HomeScreen({
+  palette,
+  feed,
+  onOpenAbout,
+}: {
+  palette: Palette;
+  feed: FeedController;
+  onOpenAbout: () => void;
+}) {
   const [message, setMessage] = useState('');
   const [analyzedMessage, setAnalyzedMessage] = useState('');
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -70,7 +80,7 @@ function HomeScreen({ palette, onOpenAbout }: { palette: Palette; onOpenAbout: (
     }
     setNotice(null);
     setAnalyzedMessage(trimmed);
-    setResult(analyze(trimmed));
+    setResult(analyze(trimmed, feed.data.rules, { blocklist: feed.data.blocklist }));
   };
 
   const paste = async () => {

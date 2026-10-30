@@ -18,7 +18,7 @@ PRERELEASE ?= 1
 
 .PHONY: help install check fix doctor typecheck test test-watch corpus verify start start-clear \
 	usb dev devices logs prebuild check-signing apk aab release publish install-apk uninstall version bump-patch bump-minor \
-	bump-major bump-rules tag gradle-stop clean reset
+	bump-major bump-rules tag feed-key gradle-stop clean reset
 
 help:
 	@echo "Louche, non ? — v$(VERSION) (versionCode $(VERSION_CODE)), règles v$(RULES_VERSION) du $(RULES_UPDATED)"
@@ -62,6 +62,9 @@ help:
 	@echo "  make bump-major    1.1.0 -> 2.0.0 et versionCode +1"
 	@echo "  make bump-rules    Version des règles +1 et date du jour"
 	@echo "  make tag           Crée le tag Git v$(VERSION)"
+	@echo ""
+	@echo "Feed (mises à jour de la détection)"
+	@echo "  make feed-key      Génère la paire de clés de signature du feed"
 	@echo ""
 	@echo "Nettoyage"
 	@echo "  make gradle-stop   Arrête les démons Gradle"
@@ -205,6 +208,9 @@ tag:
 	@git diff --quiet && git diff --cached --quiet || (echo "Des modifications ne sont pas commitées." && exit 1)
 	git tag v$(VERSION)
 	@echo "Tag v$(VERSION) créé. Pour le publier : git push --tags"
+
+feed-key:
+	@node scripts/gen-feed-key.mjs
 
 gradle-stop:
 	-cd android && ./gradlew --stop

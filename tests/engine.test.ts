@@ -1,4 +1,4 @@
-import { analyze, defaultRules, normalizeText, validateRules, verdictOf, RulesError } from '../src/engine';
+import { analyze, createBlocklist, defaultRules, normalizeText, validateRules, verdictOf, RulesError } from '../src/engine';
 import { levenshtein } from '../src/engine/distance';
 import { describeFinding } from '../src/i18n/fr';
 import rawRules from '../rules/rules.json';
@@ -134,5 +134,37 @@ describe('describeFinding', () => {
     for (const item of result.findings) {
       expect(describeFinding(item).length).toBeGreaterThan(10);
     }
+  });
+});
+
+describe('blocklist', () => {
+  const blocklist = createBlocklist(['colis-relais-24.com', 'scam.pages.dev', '185.23.44.10']);
+
+  it('matches hosts and their subdomains only', () => {
+    expect(blocklist.has('colis-relais-24.com')).toBe(true);
+    expect(blocklist.has('www.colis-relais-24.com')).toBe(true);
+    expect(blocklist.has('scam.pages.dev')).toBe(true);
+    expect(blocklist.has('other.pages.dev')).toBe(false);
+    expect(blocklist.has('pages.dev')).toBe(false);
+    expect(blocklist.has('185.23.44.10')).toBe(true);
+    expect(blocklist.size).toBe(3);
+  });
+
+  it('turns a known phishing link into a scam verdict on its own', () => {
+    const result = analyze('Bonjour, voici le lien : https://www.colis-relais-24.com/x', defaultRules, { blocklist });
+    expect(result.findings.map((item) => item.code)).toContain('knownPhishing');
+    expect(result.verdict).toBe('scam');
+    expect(analyze('Bonjour, voici le lien : https://www.colis-relais-24.com/x').verdict).toBe('clean');
+  });
+
+  it('never flags an official domain even if it is listed', () => {
+    const wrong = createBlocklist(['laposte.fr']);
+    const result = analyze('Suivi : https://www.laposte.fr/suivi', defaultRules, { blocklist: wrong });
+    expect(result.findings.map((item) => item.code)).not.toContain('knownPhishing');
+  });
+
+  it('describes the finding in French', () => {
+    const item = analyze('https://colis-relais-24.com', defaultRules, { blocklist }).findings[0];
+    expect(describeFinding(item)).toContain('déjà signalés');
   });
 });

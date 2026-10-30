@@ -3,6 +3,7 @@ export type Verdict = 'scam' | 'suspicious' | 'clean';
 export type Severity = 'high' | 'medium' | 'low' | 'info';
 
 export type FindingCode =
+  | 'knownPhishing'
   | 'brandImpersonation'
   | 'brandInSubdomain'
   | 'typosquat'
@@ -82,4 +83,9 @@ export interface Rules {
   payment: string[];
   giftCards: string[];
   moneyRequest: string[];
+}
+
+export interface Blocklist {
+  readonly size: number;
+  has(host: string): boolean;
 }
